@@ -1,7 +1,7 @@
 'use strict';
 
 const express = require('express')
-const {Server} = require('http')
+const { Server } = require('http')
 const mongoose = require('mongoose')
 const socketio = require('socket.io')
 
@@ -20,4 +20,11 @@ app.get('/', (req, res) => {
   res.render('index')
 })
 
-server.listen(PORT, () => console.log(`Server listening on port: ${PORT}`))
+mongoose.connect(MONGODB_URL, () => {
+  server.listen(PORT, () => console.log(`Server listening on port: ${PORT}`))
+})
+
+io.on('connected', socket => {
+  console.log(`Socket connected: ${socket.id}`)
+  socket.on('disconnect', () => console.log(`Socket disconnected: ${socket.id}`))
+})
