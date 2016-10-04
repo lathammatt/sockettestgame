@@ -1,0 +1,17 @@
+{
+  "name": "sockettestgame",
+  "description": "*workspace/nodeclass/classexercises/sockettestgame*",
+  "main": "index.js",
+  "authors": [
+    "Matt Latham <latham75@gmail.com>"
+  ],
+  "license": "ISC",
+  "homepage": "https://github.com/lathammatt/sockettestgame",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
