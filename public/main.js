@@ -104,7 +104,6 @@ board.addEventListener('click', evt => {
     return status.innerText = `${nextPlayer} WON!`
   }
 
-
   nextPlayer = nextPlayer === 'X' ? 'O' : 'X'
   status.innerText = `${nextPlayer}'s Turn`
 })
