@@ -2,24 +2,28 @@
 
 const socket = io()
 
-socket.on('connect', () => console.log(`Socket connected: ${socket.id}`))
-socket.on('disconnect', () => console.log('Socket disconnected'))
-socket.on('error', console.error)
-socket.on('new game', game => drawBoard(game.board))
-socket.on('move made', game => drawBoard(game.baord))
-
 const board = document.querySelector('.board')
 const status = document.querySelector('.status')
 
 const boardState = [
-  ['', '', ''],
-  ['', '', ''],
-  ['', '', ''],
+  ['','',''],
+  ['','',''],
+  ['','',''],
 ]
 
 let nextPlayer = 'X'
 
-const drawBoard = b => {
+const renderStatus = game => {
+  const result = winner(game.board)
+
+  status.innerText = result
+    ? `${result} WON!`
+    : `${game.toMove}'s Turn`
+}
+
+const renderBoard = game => {
+  const b = game.board
+
   board.innerHTML = `
     <table>
       <tr>
@@ -39,8 +43,6 @@ const drawBoard = b => {
       </tr>
     </table>
   `
-
-  status.innerText = `${nextPlayer}'s Turn`
 }
 
 const winner = b => {
@@ -85,8 +87,6 @@ const winner = b => {
   }
 }
 
-// drawBoard(boardState)
-
 board.addEventListener('click', evt => {
   const col = evt.target.cellIndex
   const row = evt.target.closest('tr').rowIndex
@@ -102,13 +102,18 @@ board.addEventListener('click', evt => {
   socket.emit('make move', { row, col })
 
   boardState[row][col] = nextPlayer
-  // drawBoard(boardState)
   console.log('Current game state:', board)
 
-  if (winner(boardState)) {
-    return status.innerText = `${nextPlayer} WON!`
-  }
-
   nextPlayer = nextPlayer === 'X' ? 'O' : 'X'
-  status.innerText = `${nextPlayer}'s Turn`
 })
+
+const render = game => {
+  renderStatus(game)
+  renderBoard(game)
+}
+
+socket.on('connect', () => console.log(`Socket connected: ${socket.id}`))
+socket.on('disconnect', () => console.log('Socket disconnected'))
+socket.on('error', console.error)
+socket.on('new game', render)
+socket.on('move made', render)

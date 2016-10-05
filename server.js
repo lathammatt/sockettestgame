@@ -30,7 +30,8 @@ const Game = mongoose.model('game', {
     [String, String, String],
     [String, String, String],
     [String, String, String],
-  ]
+  ],
+  nextMove: String,
 })
 
 io.on('connect', socket => {
@@ -39,7 +40,8 @@ io.on('connect', socket => {
         ['', '', ''],
         ['', '', ''],
         ['', '', ''],
-      ]
+      ],
+      toMove: 'X',
     })
     .then(g => {
       socket.game = g
@@ -51,7 +53,8 @@ io.on('connect', socket => {
     })
 
   socket.on('make move', move => {
-    socket.game.board[move.row][move.col] = "💩"
+    socket.game.board[row][col] = socket.game.nextMove
+    socket.game.toMove = socket.game.toMove === 'X' ? 'O' : 'X'
     socket.game.markModified('board') //will let mongoose know that the board property has been modified because mongoose still thinks each game state change is the same array and will update with blanks
     socket.game.save().then(g =>
     socket.emit('move made', g))
