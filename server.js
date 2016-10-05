@@ -52,31 +52,48 @@ io.on('connect', socket => {
       socket.emit('error', err)
       console.error(err)
     })
-
-  socket.on('make move', move => {
-    if (socket.game.result){
-      return
-    }
-
-    if (socket.game.board[row][col]){
-      return
-    }
-
-    socket.game.board[row][col] = socket.game.toMove
-    socket.game.toMove = socket.game.toMove === 'X' ? 'O' : 'X'
-    socket.game.markModified('board') //will let mongoose know that the board property has been modified because mongoose still thinks each game state change is the same array and will update with blanks
-    const result = winner(socket.game.board)
-
-    if (winner(game.board)) {
-      socket.game.toMove = undefined // how to delete a property in mongoose
-      socket.game.result = result
-    }
-    socket.game.save().then(g =>
-    socket.emit('move made', g))
-  })
   console.log(`Socket connected: ${socket.id}`)
+
+  socket.on('make move', move => makeMove)
   socket.on('disconnect', () => console.log(`Socket disconnected: ${socket.id}`))
 })
+
+const makeMove = (move, socket) => {
+  if (isFinished(socket.game) || !isSpaceAvailable(socket.game, move)) {
+    return socket.emit('error', 'Cannot move there')
+  }
+
+  Promise.resolve()//have to put promise around returned object in order to do the .then-chain below with setMove
+    .then(() => setMove(socket.game, move))
+    .then(toggleNextMove)
+    .then(setResult)
+    .then(g => game.save())
+    .then(g => socket.emit('move made', g))
+}
+
+const isFinished = game => !!game.result //will return true, or else return false
+
+const isSpaceAvailable = (game, move) => !game.board[move.row][move.col]
+
+const setMove = (game, move) => {
+  game.board[move.row][move.col] = game.toMove
+  game.markModified('board') //will let mongoose know that the board property has been modified because mongoose still thinks each game state change is the same array and will update with blanks
+  return game
+}
+
+const toggleNextMove = game => {
+  game.toMove = game.toMove === 'X' ? 'O' : 'X'
+  return game
+}
+
+const setResult = game => {
+  const result = winner(game.board)
+  if (result) {
+    game.toMove = undefined // how to delete a property in mongoose
+    game.result = result
+    return game
+  }
+}
 
 const winner = b => {
   // Rows
