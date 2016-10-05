@@ -131,8 +131,22 @@ const winner = b => {
     return b[0][2]
   }
 
-  // Tie or In-Progress
+  // Tie
+  if (!movesRemaining(b)){
+    return 'Tie'
+  }
+
+  //or In-Progress
   else {
     return null
   }
 }
+
+const movesRemaining = (board) => {
+  const possiblemoves = 9
+  const movesMade = flatten(board).join('').length
+  return possiblemoves - movesMade
+}
+
+const flatten = (array) =>
+  array.reduce((a,b) => a.concat(b))

@@ -13,9 +13,13 @@ const boardState = [
 
 
 const renderStatus = game => {
-  status.innerText = result
-    ? `${result} WON!`
-    : `${game.toMove}'s Turn`
+  if (game.result === 'Tie'){
+    return status.innerText = "It's a tie"
+  }
+  if (game.result){
+    return status.innerText = `${game.result} WON!`
+  }
+  status.innerText =`${game.toMove}'s Turn`
 }
 
 const renderBoard = game => {
