@@ -61,7 +61,7 @@ io.on('connect', socket => {
   Game.findById(id)
     .then(g => {
       socket.join(g._id)
-      socket.game = g
+      socket.game = g._id
       socket.emit('new game', g)
     })
     .catch(err => {
@@ -75,17 +75,19 @@ io.on('connect', socket => {
 })
 
 const makeMove = (move, socket) => {
-  if (isFinished(socket.game) || !isSpaceAvailable(socket.game, move)) {
-    return
-  }
-
-  Promise.resolve() //have to put promise around returned object in order to do the .then-chain below with setMove
-    .then(() => setMove(socket.game, move))
+  Game.findById(socket.gameID)
+    .then(game => {
+      if (isFinished(game) || !isSpaceAvailable(game, move)) {
+        return game
+      }
+    })
+  // Promise.resolve() //have to put promise around returned object in order to do the .then-chain below with setMove
+    .then(g => setMove(g, move))
     .then(toggleNextMove)
     .then(setResult)
     .then(g => g.save())
     .then(g => io.to(g._id).emit('move made, g'))
-    .then(g => io.to(socket.game._id).emit('move made', g))
+    .catch(console.error)
 }
 
 const isFinished = game => !!game.result //will return true, or else return false

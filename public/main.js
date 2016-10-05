@@ -5,12 +5,6 @@ const socket = io()
 const board = document.querySelector('.board')
 const status = document.querySelector('.status')
 
-const boardState = [
-  ['','',''],
-  ['','',''],
-  ['','',''],
-]
-
 
 const renderStatus = game => {
   if (game.result === 'Tie'){
