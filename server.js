@@ -35,19 +35,26 @@ const Game = mongoose.model('game', {
 
 io.on('connect', socket => {
   Game.create({
-    board: [
-      ['', '', ''],
-      ['', '', ''],
-      ['', '', ''],
-    ]
-  })
-  .then(g => {
-    socket.game = g
-    socket.emit('new game', g)
-  })
-  .catch(err => {
-    socket.emit('error', err)
-    console.error(err)
+      board: [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ]
+    })
+    .then(g => {
+      socket.game = g
+      socket.emit('new game', g)
+    })
+    .catch(err => {
+      socket.emit('error', err)
+      console.error(err)
+    })
+
+  socket.on('make move', move => {
+    socket.game.board[move.row][move.col] = "💩"
+    socket.game.markModified('board') //will let mongoose know that the board property has been modified because mongoose still thinks each game state change is the same array and will update with blanks
+    socket.game.save().then(g =>
+    socket.emit('move made', g))
   })
   console.log(`Socket connected: ${socket.id}`)
   socket.on('disconnect', () => console.log(`Socket disconnected: ${socket.id}`))
