@@ -17,8 +17,27 @@ app.set('view engine', 'pug')
 app.use(express.static('public'))
 
 app.get('/', (req, res) => {
-  res.render('index')
+  res.render('home')
 })
+app.get('/game', (req, res) => {
+  Game.find()
+    .then(games => res.render('index', { games }))
+})
+app.get('/game/create', (req, res) => {
+  Game.create({
+      board: [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      toMove: 'X',
+    })
+    .then(game => res.redirect(`/game/${game._id}`))
+})
+app.get('/game/:id', (req, res) => {
+  res.render('game')
+})
+
 
 mongoose.Promise = Promise
 mongoose.connect(MONGODB_URL, () => {
@@ -31,20 +50,17 @@ const Game = mongoose.model('game', {
     [String, String, String],
     [String, String, String],
   ],
-  nextMove: String,
+  toMove: String,
   result: String,
 })
 
 io.on('connect', socket => {
-  Game.create({
-      board: [
-        ['', '', ''],
-        ['', '', ''],
-        ['', '', ''],
-      ],
-      toMove: 'X',
-    })
+  const id = socket.handshake.headers.referer.split('/').slice(-1)[0]
+
+
+  Game.findById(id)
     .then(g => {
+      socket.join(g._id)
       socket.game = g
       socket.emit('new game', g)
     })
@@ -54,21 +70,22 @@ io.on('connect', socket => {
     })
   console.log(`Socket connected: ${socket.id}`)
 
-  socket.on('make move', move => makeMove)
+  socket.on('make move', move => makeMove(move, socket))
   socket.on('disconnect', () => console.log(`Socket disconnected: ${socket.id}`))
 })
 
 const makeMove = (move, socket) => {
   if (isFinished(socket.game) || !isSpaceAvailable(socket.game, move)) {
-    return socket.emit('error', 'Cannot move there')
+    return
   }
 
-  Promise.resolve()//have to put promise around returned object in order to do the .then-chain below with setMove
+  Promise.resolve() //have to put promise around returned object in order to do the .then-chain below with setMove
     .then(() => setMove(socket.game, move))
     .then(toggleNextMove)
     .then(setResult)
-    .then(g => game.save())
-    .then(g => socket.emit('move made', g))
+    .then(g => g.save())
+    .then(g => io.to(g._id).emit('move made, g'))
+    .then(g => io.to(socket.game._id).emit('move made', g))
 }
 
 const isFinished = game => !!game.result //will return true, or else return false
@@ -91,8 +108,8 @@ const setResult = game => {
   if (result) {
     game.toMove = undefined // how to delete a property in mongoose
     game.result = result
-    return game
   }
+  return game
 }
 
 const winner = b => {
@@ -132,14 +149,13 @@ const winner = b => {
   }
 
   // Tie
-  if (!movesRemaining(b)){
+  if (!movesRemaining(b)) {
     return 'Tie'
   }
 
   //or In-Progress
-  else {
-    return null
-  }
+  return null
+
 }
 
 const movesRemaining = (board) => {
@@ -149,4 +165,4 @@ const movesRemaining = (board) => {
 }
 
 const flatten = (array) =>
-  array.reduce((a,b) => a.concat(b))
+  array.reduce((a, b) => a.concat(b))

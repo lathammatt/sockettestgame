@@ -5,8 +5,7 @@ html
     link(rel='stylesheet', href='/main.css')
   body
     h1 Tick Tack Doh!
-
-    h2 Select a game
-    ul
-      for game in games
-        li: a(href=`/game/${game._id}`) Game: #{game._id}
+    .create
+      a(href='/game/create') Start New Game
+    .join
+      a(href='/game') Join a Game
