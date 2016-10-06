@@ -28,7 +28,7 @@ app.get('/game/create', (req, res) => {
       board: [
         ['', '', ''],
         ['', '', ''],
-        ['', '', ''],
+        ['', '', '']
       ],
       toMove: 'X',
     })
@@ -57,11 +57,10 @@ const Game = mongoose.model('game', {
 io.on('connect', socket => {
   const id = socket.handshake.headers.referer.split('/').slice(-1)[0]
 
-
   Game.findById(id)
     .then(g => {
       socket.join(g._id)
-      socket.game = g._id
+      socket.gameID = g._id
       socket.emit('new game', g)
     })
     .catch(err => {
@@ -78,15 +77,16 @@ const makeMove = (move, socket) => {
   Game.findById(socket.gameID)
     .then(game => {
       if (isFinished(game) || !isSpaceAvailable(game, move)) {
-        return game
+        return
       }
+      return game
     })
   // Promise.resolve() //have to put promise around returned object in order to do the .then-chain below with setMove
     .then(g => setMove(g, move))
     .then(toggleNextMove)
     .then(setResult)
     .then(g => g.save())
-    .then(g => io.to(g._id).emit('move made, g'))
+    .then(g => io.to(g._id).emit('move made', g))
     .catch(console.error)
 }
 
@@ -166,5 +166,5 @@ const movesRemaining = (board) => {
   return possiblemoves - movesMade
 }
 
-const flatten = (array) =>
+const flatten = array =>
   array.reduce((a, b) => a.concat(b))
